@@ -78,8 +78,31 @@ class ContentProcessor:
             author = novel_info["authors"][0].get("name", "")
 
         summary = ""
-        if novel_info.get("summary"):
-            summary = self.parser.decode_html_entities(novel_info["summary"].strip())
+        raw_summary = novel_info.get("summary")
+        if raw_summary:
+            if isinstance(raw_summary, str):
+                summary = self.parser.decode_html_entities(raw_summary.strip())
+            elif isinstance(raw_summary, dict) or isinstance(raw_summary, list):
+                try:
+                    # Если пришел словарь с контентом внутри (как у вас в логе)
+                    if isinstance(raw_summary, dict) and "content" in raw_summary:
+                        content_list = raw_summary["content"]
+                    elif isinstance(raw_summary, list):
+                        content_list = raw_summary
+                    else:
+                        content_list = [raw_summary]
+                    
+                    # Прогоняем структуру через встроенный парсер проекта
+                    html_summary = self.parser.json_to_html(content_list, [])
+                    
+                    # Для FB2 и TXT очищаем HTML-теги, превращая их в обычный текст с переносами строк
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(html_summary, "html.parser")
+                    summary = soup.get_text(separator="\n")
+                except Exception:
+                    summary = ""
+            else:
+                summary = str(raw_summary)
 
         genres: List[str] = []
         if novel_info.get("genres"):

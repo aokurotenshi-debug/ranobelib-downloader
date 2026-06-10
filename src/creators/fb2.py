@@ -114,7 +114,7 @@ class Fb2Creator(ContentProcessor):
             else ""
         )
 
-        if annotation:
+        if annotation and isinstance(annotation, str):
             annotation_lines = [
                 f"      <p>{line.strip()}</p>" for line in annotation.split("\n") if line.strip()
             ]
